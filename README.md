@@ -17,8 +17,9 @@ This repository hosts a Python implementation of the CorrDim algorithm, aimed at
 
 ## Installation
 
-(Provide installation instructions here, including how to install Python if not installed, and any virtual environment setup.)
-
+```Batch
+pip install CorrDim-By-Bisca
+```
 ## Usage
 
 To estimate the Correlation Dimension of a dataset using the CorrDim algorithm, follow these steps:
