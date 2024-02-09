@@ -32,7 +32,7 @@ Example:
 
 ```python
 import numpy as np
-from your_module import corr_dim
+from CorrDim-By-Bisca import corr_dim
 from scipy.spatial.distance import pdist, squareform
 
 # Example dataset: 1000 points in a 3D space
