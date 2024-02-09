@@ -59,8 +59,6 @@ local_dimensions = local_dim(data, k=10)
 
 # Estimate the packing numbers
 packing_nums = packing_numbers(data, radius=1.0)
-
-# ...add additional usage examples as needed...
 ```
 
 ## Contributing
