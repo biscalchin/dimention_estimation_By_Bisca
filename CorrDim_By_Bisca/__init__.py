@@ -1,1 +1,2 @@
-from .CorrDim_By_Bisca import corr_dim
+from .corrdim import corr_dim 
+from .dimensionality import local_dim, packing_numbers
