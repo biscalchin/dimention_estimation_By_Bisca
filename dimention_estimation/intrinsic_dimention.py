@@ -4,6 +4,31 @@ from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist, squareform
 import matplotlib.pyplot as plt
 from scipy.linalg import lstsq
+import sys
+
+
+def loading_bar(iteration, total, prefix='', suffix='', decimals=1, length=50, fill='█', print_end="\r"):
+    """
+    Call in a loop to create terminal progress bar.
+
+    Parameters:
+        iteration (int): Current iteration.
+        total (int): Total iterations.
+        prefix (str): Prefix string.
+        suffix (str): Suffix string.
+        decimals (int): Positive number of decimals in percent complete.
+        length (int): Character length of bar.
+        fill (str): Bar fill character.
+        print_end (str): End character (e.g. "\\r", "\\r\\n").
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=print_end)
+    sys.stdout.flush()  # Flush the output buffer, forcing an update to the display
+    # Print New Line on Complete
+    if iteration == total:
+        print()
 
 
 def intrinsic_dim(X, method='MLE'):
@@ -42,32 +67,30 @@ def corr_dim(X):
     - no_dims: Estimated intrinsic dimensionality based on correlation dimension.
     """
     n = X.shape[0]
-    # Find nearest neighbors
     nn = NearestNeighbors(n_neighbors=6).fit(X)  # Using 6 because it includes the point itself
     distances, _ = nn.kneighbors(X)
     val = distances[:, 1:].flatten()  # Exclude the first column which is distance to itself
 
-    # Determine r1 and r2
     r1 = np.median(val)
     r2 = np.max(val)
 
-    # Initialize s1 and s2
     s1, s2 = 0, 0
     XX = np.sum(X ** 2, axis=1)
+    print("Calculating correlation dimension...")
     for i in range(n):
-        dist = np.sqrt(XX + XX[i] - 2 * np.dot(X, X[i, :]))
+        dist = np.sqrt(np.maximum(XX + XX[i] - 2 * np.dot(X, X[i, :]), 0))
         s1 += np.sum(dist < r1)
         s2 += np.sum(dist < r2)
 
-    # Adjust counts for self-matching
+        # Update the loading bar for each iteration
+        loading_bar(i + 1, n, prefix='Progress:', suffix='Complete', length=50)
+
     s1 -= n
     s2 -= n
 
-    # Calculate correlation sums
     Cr1 = 2.0 * s1 / (n * (n - 1))
     Cr2 = 2.0 * s2 / (n * (n - 1))
 
-    # Estimate intrinsic dimensionality
     no_dims = (np.log(Cr2) - np.log(Cr1)) / (np.log(r2) - np.log(r1))
 
     return no_dims
@@ -120,7 +143,11 @@ def packing_numbers(X):
     done = False
     l = 0
     L = np.zeros((2, max_iter))  # Store log of packing numbers for each radius
+    total_iterations = max_iter * 2  # Total iterations for progress bar (assuming max_iter * 2 for simplicity)
 
+    current_iteration = 0  # Initialize current iteration for progress bar
+
+    print("Starting Packing Numbers calculation...")
     while not done and l < max_iter:
         l += 1
         perm = np.random.permutation(X.shape[0])
@@ -131,19 +158,23 @@ def packing_numbers(X):
             for i in range(X.shape[0]):
                 is_separated = True
                 for j in C:
-                    if np.sqrt(np.sum((X_perm[i, :] - X_perm[j, :]) ** 2)) < r[k]:
+                    if np.sqrt(np.maximum(np.sum((X_perm[i, :] - X_perm[j, :]) ** 2), 0)) < r[k]:
                         is_separated = False
                         break
                 if is_separated:
                     C.append(i)
             L[k, l - 1] = np.log(len(C))  # Log of packing number
 
+            # Update current iteration and display the progress bar
+            current_iteration += 1
+            loading_bar(current_iteration, total_iterations, prefix='Progress:', suffix='Complete', length=50)
+
         # Estimate intrinsic dimension
         no_dims = -((np.mean(L[1, :l]) - np.mean(L[0, :l])) / (np.log(r[1]) - np.log(r[0])))
 
         # Check for convergence
         if l > 10:
-            if 1.65 * (np.sqrt(np.var(L[0, :l]) + np.var(L[1, :l])) / np.sqrt(l) / (
+            if 1.65 * (np.sqrt(np.maximum(np.var(L[0, :l]) + np.var(L[1, :l]), 0)) / np.sqrt(l) / (
                     np.log(r[1]) - np.log(r[0]))) < epsilon:
                 done = True
 
@@ -160,71 +191,134 @@ def gmst(X):
     Returns:
     - no_dims: Estimated intrinsic dimensionality.
     """
+    print("Preparing data for GMST calculation...")
+
     gamma = 1
-    M = 1  # Number of estimates
+    M = 1  # Assuming M is always 1 for simplification
     N = 10  # Number of random permutations
     samp_points = np.arange(X.shape[0] - 10, X.shape[0])  # Sample points
-    k = 6  # Number of nearest neighbors
+    k = 6  # Nearest neighbors to consider
     Q = len(samp_points)
-    knnlenavg_vec = np.zeros((M, Q))
-    knnlenstd_vec = np.zeros((M, Q))
+    total_iterations = Q * N  # Total iterations for progress bar updates
+
+    knnlenavg_vec = np.zeros(Q)
+    knnlenstd_vec = np.zeros(Q)
     dvec = np.zeros(M)
 
-    # Compute Euclidean distance matrix using NearestNeighbors
-    nn = NearestNeighbors(n_neighbors=k * 10)
-    nn.fit(X)
-    D, _ = nn.kneighbors(X)
+    print("\nBeginning GMST calculation...")
 
-    for i in range(M):
-        j = 0
-        for n in samp_points:
-            knnlen1 = 0
-            knnlen2 = 0
-            for trial in range(N):
-                # Random permutation of data
-                indices = np.random.permutation(X.shape[0])[:n]
-                Dr = D[indices][:, indices]
+    current_iteration = 0  # Initialize current iteration for progress bar
 
-                # Sum of distances to k nearest neighbors
-                L = np.sum(Dr[:, 1:k + 1], axis=1)  # Exclude the distance to itself
+    for j, n in enumerate(samp_points):
+        knnlen1 = 0
+        knnlen2 = 0
+        for trial in range(N):
+            # Update current iteration and display the progress bar at the beginning of each trial
+            current_iteration += 1
+            loading_bar(current_iteration, total_iterations, prefix='Progress:', suffix='Complete', length=50)
 
-                knnlen1 += np.sum(L)
-                knnlen2 += np.sum(L ** 2)
+            # Select a random subset of points
+            indices = np.random.permutation(X.shape[0])[:n]
+            subset_X = X[indices]
 
-            # Compute average and standard deviation over N trials
-            knnlenavg_vec[i, j] = knnlen1 / (N * n)
-            knnlenstd_vec[i, j] = np.sqrt((knnlen2 - (knnlen1 / N) ** 2) / (N - 1))
-            j += 1
+            # Recalculate distances for the current subset
+            nn_subset = NearestNeighbors(n_neighbors=k + 1)
+            nn_subset.fit(subset_X)
+            distances_subset, _ = nn_subset.kneighbors(subset_X)
 
-        # Least squares estimate of intrinsic dimensionality
-        A = np.vstack([np.log(samp_points), np.ones(Q)]).T
-        sol1, _, _, _ = lstsq(A, np.log(knnlenavg_vec[i, :]))
-        dvec[i] = gamma / (1 - sol1[0])
+            # Use distances to the k nearest neighbors (excluding the point itself)
+            L = np.sum(distances_subset[:, 1:], axis=1)
+
+            knnlen1 += np.sum(L)
+            knnlen2 += np.sum(L ** 2)
+
+        # Compute average and standard deviation over N trials for each sample point size
+        knnlenavg_vec[j] = knnlen1 / (N * n)
+        variance = (knnlen2 - (knnlen1 / N) ** 2) / (N - 1)
+        knnlenstd_vec[j] = np.sqrt(np.maximum(variance, 0))  # Ensures non-negative input to sqrt
+
+    # Least squares estimate of intrinsic dimensionality after iterating through all sample point sizes
+    A = np.vstack([np.log(samp_points), np.ones(Q)]).T
+    sol, _, _, _ = lstsq(A, np.log(knnlenavg_vec))
+    dvec[0] = gamma / (1 - sol[0])
 
     no_dims = np.mean(np.abs(dvec))
     return no_dims
 
 
 def eig_value(X):
-    # PCA Eigenvalue Analysis
+    """
+    Estimate the intrinsic dimensionality of dataset X using Eigenvalue Analysis via PCA.
+
+    Parameters:
+    - X : np.ndarray
+        A NumPy array of shape (n_samples, n_features) representing the dataset.
+
+    Returns:
+    - int
+        The estimated intrinsic dimensionality of the dataset, determined as the number
+        of principal components (eigenvalues) that account for a significant portion of
+        the variance (more than 2.5%).
+
+    This method performs PCA on the dataset to identify the eigenvalues, then counts
+    how many of these eigenvalues are significant, i.e., each representing more than
+    2.5% of the total variance. The count of these significant eigenvalues is used
+    as an estimate of the dataset's intrinsic dimensionality.
+    """
+    # Perform PCA on the dataset to find its eigenvalues
     pca = PCA(n_components=min(X.shape))
     pca.fit(X)
+
+    # Calculate the ratio of variance explained by each component
     lambda_ = pca.explained_variance_ratio_
+
+    # Count the number of components that explain more than 2.5% of the variance
     no_dims = np.sum(lambda_ > 0.025)
+
+    # Return the count as the estimated dimensionality
     return no_dims
 
 
 def mle(X):
-    # Maximum Likelihood Estimation
-    k1, k2 = 6, 12
-    n = X.shape[0]
-    d = X.shape[1]
-    X2 = np.sum(X**2, axis=1)
+    """
+    Estimate the intrinsic dimensionality of dataset X using Maximum Likelihood Estimation (MLE).
+
+    Parameters:
+    - X : np.ndarray
+        A NumPy array of shape (n_samples, n_features) representing the dataset.
+
+    Returns:
+    - float
+        The estimated intrinsic dimensionality of the dataset.
+
+    The MLE method computes the log distances to the k-nearest neighbors for each point in the dataset,
+    then uses these distances to estimate the intrinsic dimensionality. The estimation is performed over
+    a range of k values, from k1 to k2, and the final dimensionality estimate is the average over all points
+    and all values of k in the specified range.
+    """
+    k1, k2 = 6, 12  # Range of neighborhood sizes to consider
+    n = X.shape[0]  # Number of samples
+    X2 = np.sum(X**2, axis=1)  # Precompute the squared norms of data points
+
+    # Initialize the matrix to store log distances to k-nearest neighbors
     knnmatrix = np.zeros((k2, n))
+
+    # Compute the matrix of log distances
     for i in range(n):
+        # Calculate squared Euclidean distance from point i to all points
         distance = np.sort(X2 + X2[i] - 2 * np.dot(X, X[i,:]))
-        knnmatrix[:,i] = 0.5 * np.log(distance[1:k2+1])
+
+        # Store the log of distances, excluding the distance to the point itself (hence starting from index 1)
+        knnmatrix[:, i] = 0.5 * np.log(distance[1:k2+1])
+
+    # Calculate the cumulative sum of log distances, which is used in the MLE formula
     S = np.cumsum(knnmatrix, axis=0)
+
+    # Prepare an array of the k values considered, for use in the dimensionality estimation formula
     indexk = np.tile(np.arange(k1, k2+1).reshape(k2-k1+1, 1), (1, n))
+
+    # Apply the MLE formula to estimate the dimensionality
     dhat = -(indexk - 2) / (S[k1-1:k2,:] - knnmatrix[k1-1:k2,:] * indexk)
+
+    # Return the average estimated dimensionality across all points and k values
     return np.mean(dhat)
