@@ -205,7 +205,7 @@ def gmst(X):
     knnlenstd_vec = np.zeros(Q)
     dvec = np.zeros(M)
 
-    print("\nBeginning GMST calculation...")
+    print("Beginning GMST calculation...")
 
     current_iteration = 0  # Initialize current iteration for progress bar
 
