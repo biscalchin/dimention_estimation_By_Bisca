@@ -1,13 +1,13 @@
-#IntrinsicDimEstimator by Eng. Alberto Biscalchin
+# IntrinsicDimEstimator by Eng. Alberto Biscalchin
 The IntrinsicDimEstimator module provides tools for estimating the intrinsic dimensionality of datasets using various methods. It supports correlation dimension, nearest neighbor dimension, packing numbers, geodesic minimum spanning tree, eigenvalue analysis, and maximum likelihood estimation methods.
 
-##Installation
+## Installation
 Install IntrinsicDimEstimator using pip:
 ```Bash
 pip install IntrinsicDimEstimator
 ```
 
-##Usage
+## Usage
 Below is an example demonstrating how to generate a synthetic dataset and use the IntrinsicDimEstimator to estimate its intrinsic dimensionality with varying levels of noise added to the dataset.
 
 ```Python
@@ -42,5 +42,5 @@ for noise_level in noise_levels:
 
 This example generates a dataset composed of points from the surface of a sphere, a cube, and lines attached to a sphere. It then adds varying levels of Gaussian noise to this dataset and estimates the intrinsic dimensionality using the Maximum Likelihood Estimation (MLE) method provided by the IntrinsicDimEstimator.
 
-##Contributing
+## Contributing
 Contributions to the IntrinsicDimEstimator are welcome. Please feel free to submit pull requests or open issues to suggest improvements or report bugs.
