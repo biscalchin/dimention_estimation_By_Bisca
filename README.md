@@ -7,6 +7,28 @@ Install IntrinsicDimEstimator using pip:
 pip install IntrinsicDimEstimator
 ```
 
+## Available Methods
+The IntrinsicDimEstimator module offers a variety of methods to estimate the intrinsic dimensionality of a dataset. Each method has its own approach and is suitable for different types of data. Below is a brief overview of each method:
+
+## CorrDim (Correlation Dimension)
+- Description: Estimates the intrinsic dimensionality based on the correlation dimension, which measures how the number of close pairs of points (within a certain distance) scales with that distance.
+- Best for: Datasets where you suspect a fractal-like structure or want to understand scaling properties.
+## NearNbDim (Nearest Neighbor Dimension)
+- Description: Utilizes the distances to the k-th nearest neighbors of each point to estimate the dimension. It assumes that the volume of the space occupied by the data grows at a rate indicative of the intrinsic dimensionality.
+- Best for: General datasets, especially when the focus is on local structures and scaling behaviors.
+## PackingNumbers
+- Description: Estimates dimensionality by calculating the maximum number of non-overlapping spheres of a certain radius that can fit within the dataset. It then examines how this number changes as the radius changes.
+- Best for: Analyzing the dataset's global geometric structure and its compactness or sparsity.
+## GMST (Geodesic Minimum Spanning Tree)
+- Description: Based on analyzing the geodesic minimum spanning tree of the dataset. It focuses on the scaling properties of the tree's length as a function of the number of points.
+- Best for: Datasets where the geodesic (rather than Euclidean) distances between points are important, such as manifold learning.
+## EigValue (Eigenvalue Analysis)
+- Description: Performs Principal Component Analysis (PCA) and estimates the dimensionality by counting the number of significant eigenvalues. It's a direct measure of how many principal components are needed to represent the data's variance.
+- Best for: Linearly structured data or when interested in capturing the variance with minimal dimensions.
+## MLE (Maximum Likelihood Estimation)
+- Description: Uses a statistical approach to estimate the intrinsic dimension by maximizing the likelihood of the distances between nearest neighbors under a model for the data distribution.
+- Best for: A broad range of datasets, offering a robust and theoretically grounded estimation.
+
 ## Usage
 Below is an example demonstrating how to generate a synthetic dataset and use the IntrinsicDimEstimator to estimate its intrinsic dimensionality with varying levels of noise added to the dataset.
 
@@ -30,13 +52,19 @@ def genLDdata():
 # Generate the synthetic dataset
 A = genLDdata()
 
-# Noise levels to test
-noise_levels = [0, 0.01, 0.05, 0.1, 0.5]
+# Methods to test
+methods = ['CorrDim', 'NearNbDim', 'PackingNumbers', 'GMST', 'EigValue', 'MLE']
 
-for noise_level in noise_levels:
-    noisy_A = A + noise_level * np.random.randn(*A.shape)  # Add noise
-    estimated_dim = intrinsic_dim(noisy_A, method='MLE')  # Estimate intrinsic dimension
-    print(f'Estimated dimension with noise level {noise_level}: {estimated_dim}')
+# Noise level to test
+noise_level = 0.05  # Example noise level
+
+# Add noise to the dataset
+noisy_A = A + noise_level * np.random.randn(*A.shape)
+
+# Estimate intrinsic dimensionality using each method
+for method in methods:
+    estimated_dim = intrinsic_dim(noisy_A, method=method)
+    print(f'Estimated dimension using {method}: {estimated_dim}')
 
 ```
 
