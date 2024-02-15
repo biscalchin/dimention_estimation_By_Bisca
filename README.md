@@ -28,13 +28,16 @@ The IntrinsicDimEstimator module offers a variety of methods to estimate the int
 ## MLE (Maximum Likelihood Estimation)
 - Description: Uses a statistical approach to estimate the intrinsic dimension by maximizing the likelihood of the distances between nearest neighbors under a model for the data distribution.
 - Best for: A broad range of datasets, offering a robust and theoretically grounded estimation.
+## idPettis
+- Description: A novel method for estimating the intrinsic dimensionality that leverages the Pettis integral, focusing on capturing the geometric and topological properties of the data distribution. This method provides an alternative perspective by evaluating the dataset's structure through a comprehensive integration process.
+- Best for: Complex datasets where traditional methods may not fully capture the underlying structure or when a more nuanced understanding of the data's intrinsic geometry is desired.
 
 ## Usage
 Below is an example demonstrating how to generate a synthetic dataset and use the IntrinsicDimEstimator to estimate its intrinsic dimensionality with varying levels of noise added to the dataset.
 
 ```Python
 import numpy as np
-from IntrinsicDimEstimator import intrinsic_dim
+from IntrinsicDimEstimator import intrinsic_dim, generate_helix_data, idpettis
 
 def genLDdata():
     # Generate data from different geometries
@@ -65,6 +68,20 @@ noisy_A = A + noise_level * np.random.randn(*A.shape)
 for method in methods:
     estimated_dim = intrinsic_dim(noisy_A, method=method)
     print(f'Estimated dimension using {method}: {estimated_dim}')
+
+# Generate a helix dataset
+data = generate_helix_data(num_points=1000)
+
+# Compute the pairwise distances
+ydist = squareform(pdist(data))
+
+# Sort distances for each point to get nearest neighbors, excluding the distance to itself
+ydist_sorted = np.sort(ydist, axis=1)[:, 1:]
+
+# Estimate the intrinsic dimensionality
+idhat = idpettis(ydist_sorted, n=data.shape[0], K=10)
+
+print(f'Estimated intrinsic dimensionality: {idhat}')
 
 ```
 
