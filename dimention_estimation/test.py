@@ -1,5 +1,6 @@
 import numpy as np
-from IntrinsicDimEstimator import intrinsic_dim
+from IntrinsicDimEstimator import intrinsic_dim, idpettis, generate_helix_data
+from scipy.spatial.distance import pdist, squareform
 
 
 def genLDdata():
@@ -32,3 +33,20 @@ noisy_A = A + noise_level * np.random.randn(*A.shape)
 for method in methods:
     estimated_dim = intrinsic_dim(noisy_A, method=method)
     print(f'Estimated dimension using {method}: {estimated_dim}')
+
+
+print("Changing dataset...")
+# Generate a helix dataset
+data = generate_helix_data(num_points=1000)
+print("An Helix shaped dataset has been correctly generated.")
+
+# Compute the pairwise distances
+ydist = squareform(pdist(data))
+
+# Sort distances for each point to get nearest neighbors, excluding the distance to itself
+ydist_sorted = np.sort(ydist, axis=1)[:, 1:]
+
+# Estimate the intrinsic dimensionality
+idhat = idpettis(ydist_sorted, n=data.shape[0], K=10)
+
+print(f'Estimated intrinsic dimensionality: {idhat}')
