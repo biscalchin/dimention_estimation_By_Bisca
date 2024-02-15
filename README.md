@@ -10,25 +10,25 @@ pip install IntrinsicDimEstimator
 ## Available Methods
 The IntrinsicDimEstimator module offers a variety of methods to estimate the intrinsic dimensionality of a dataset. Each method has its own approach and is suitable for different types of data. Below is a brief overview of each method:
 
-## CorrDim (Correlation Dimension)
+### CorrDim (Correlation Dimension)
 - Description: Estimates the intrinsic dimensionality based on the correlation dimension, which measures how the number of close pairs of points (within a certain distance) scales with that distance.
 - Best for: Datasets where you suspect a fractal-like structure or want to understand scaling properties.
-## NearNbDim (Nearest Neighbor Dimension)
+### NearNbDim (Nearest Neighbor Dimension)
 - Description: Utilizes the distances to the k-th nearest neighbors of each point to estimate the dimension. It assumes that the volume of the space occupied by the data grows at a rate indicative of the intrinsic dimensionality.
 - Best for: General datasets, especially when the focus is on local structures and scaling behaviors.
-## PackingNumbers
+### PackingNumbers
 - Description: Estimates dimensionality by calculating the maximum number of non-overlapping spheres of a certain radius that can fit within the dataset. It then examines how this number changes as the radius changes.
 - Best for: Analyzing the dataset's global geometric structure and its compactness or sparsity.
-## GMST (Geodesic Minimum Spanning Tree)
+### GMST (Geodesic Minimum Spanning Tree)
 - Description: Based on analyzing the geodesic minimum spanning tree of the dataset. It focuses on the scaling properties of the tree's length as a function of the number of points.
 - Best for: Datasets where the geodesic (rather than Euclidean) distances between points are important, such as manifold learning.
-## EigValue (Eigenvalue Analysis)
+### EigValue (Eigenvalue Analysis)
 - Description: Performs Principal Component Analysis (PCA) and estimates the dimensionality by counting the number of significant eigenvalues. It's a direct measure of how many principal components are needed to represent the data's variance.
 - Best for: Linearly structured data or when interested in capturing the variance with minimal dimensions.
-## MLE (Maximum Likelihood Estimation)
+### MLE (Maximum Likelihood Estimation)
 - Description: Uses a statistical approach to estimate the intrinsic dimension by maximizing the likelihood of the distances between nearest neighbors under a model for the data distribution.
 - Best for: A broad range of datasets, offering a robust and theoretically grounded estimation.
-## idPettis
+### idPettis
 - Description: A novel method for estimating the intrinsic dimensionality that leverages the Pettis integral, focusing on capturing the geometric and topological properties of the data distribution. This method provides an alternative perspective by evaluating the dataset's structure through a comprehensive integration process.
 - Best for: Complex datasets where traditional methods may not fully capture the underlying structure or when a more nuanced understanding of the data's intrinsic geometry is desired.
 
